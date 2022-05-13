@@ -26,6 +26,8 @@ import com.example.workmanagertest.ui.theme.WorkManagerTestTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        //setting the constraints to OneTimeWorkRequestBuilder, it will only work when the network is connected
         val downloadReq = OneTimeWorkRequestBuilder<DownloadWorker>()
             .setConstraints(
                 Constraints.Builder(
@@ -34,34 +36,39 @@ class MainActivity : ComponentActivity() {
                 ).build()
             ).build()
 
+        // applies the filter after downloading
         val applyFilter = OneTimeWorkRequestBuilder<ColorFilterWorker>().build()
 
+        //WorkManager instance
         val workManager = WorkManager.getInstance(applicationContext)
 
         setContent {
             WorkManagerTestTheme {
 
+                // work Info that will listen to download
                 val workInfos = workManager.getWorkInfosForUniqueWorkLiveData("download")
                     .observeAsState()
                     .value
+
+                //download info of whether the download is started or not
                 val downloadInfo = remember(workInfos) {
                     workInfos?.find { it.id == downloadReq.id }
-
                 }
 
+                // color filter info
                 val colorFilterInfo = remember(workInfos) {
                     workInfos?.find { it.id == applyFilter.id }
                 }
 
+                //download info
                 val imageUri by derivedStateOf {
                     val downloadUrl =
                         downloadInfo?.outputData?.getString(WorkerParams.IMAGE_URI)?.toUri()
                     val colorFilter =
                         colorFilterInfo?.outputData?.getString(WorkerParams.FILTER_URI)?.toUri()
                     colorFilter ?: downloadUrl
-
-
                 }
+
                 // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -79,10 +86,9 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier.fillMaxWidth()
                             )
                             Spacer(modifier = Modifier.height(16.dp))
-
-
                         }
 
+                        // begins the work on button click
                         Button(onClick = {
                             workManager.beginUniqueWork(
                                 "download",
@@ -96,6 +102,7 @@ class MainActivity : ComponentActivity() {
 
                         Spacer(modifier = Modifier.height(16.dp))
 
+                        // checks the state of worker by using multiple info states
                         when (downloadInfo?.state) {
                             WorkInfo.State.RUNNING -> {
                                 Text("Downloading (Task Running)...")
@@ -122,6 +129,7 @@ class MainActivity : ComponentActivity() {
 
                         Spacer(modifier = Modifier.height(16.dp))
 
+                        // checks wether the filter is applied or not by using the color filter info
                         when (colorFilterInfo?.state) {
                             WorkInfo.State.RUNNING -> {
                                 Text("Downloading (Task Running)...")
@@ -151,18 +159,5 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String) {
-    Text(text = "Hello $name!")
-}
-
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    WorkManagerTestTheme {
-        Greeting("Android")
     }
 }

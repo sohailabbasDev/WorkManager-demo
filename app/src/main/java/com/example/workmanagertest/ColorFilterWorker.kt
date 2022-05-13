@@ -14,15 +14,20 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
+//Coroutine worker
 class ColorFilterWorker(
     private val context: Context,
     private val workParams: WorkerParameters
 ) : CoroutineWorker(context, workParams) {
 
+    // do work override method
     override suspend fun doWork(): Result {
         val imageFile = workParams.inputData.getString(WorkerParams.IMAGE_URI)?.toUri()?.toFile()
 
+        // here we set the filter to image using this worker
         delay(3000L)
+
+        // this returns the filtered image as required
         return imageFile?.let { file ->
             val bmp = BitmapFactory.decodeFile(file.absolutePath)
             val resultbmp = bmp.copy(bmp.config, true)
